@@ -4,7 +4,8 @@
   <title>Jupyter Notebook Viewer</title>
   <style>
     #drop_zone {
-      width: 300px;
+      width: 100%;       /* Ensures that drop_zone takes up to 100% width of its parent. */
+      max-width: 600px;  /* Ensures that drop_zone's width doesn't exceed 300px. */
       height: 200px;
       border: 2px dashed #aaa;
       line-height: 200px;
@@ -24,6 +25,7 @@
       display: none;
     }
   </style>
+  
 </head>
 <body>
   <div id="drop_zone">Drop a Jupyter notebook here</div>
