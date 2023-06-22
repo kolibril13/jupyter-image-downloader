@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Jupyter Notebook Viewer</title>
+  <style>
+    #drop_zone {
+      width: 300px;
+      height: 200px;
+      border: 2px dashed #aaa;
+      line-height: 200px;
+      text-align: center;
+      font-size: 24px;
+      color: #aaa;
+      margin: 15px auto;
+    }
+    #drop_zone.dragging {
+      background-color: orange;
+    }
+    .image {
+      margin: 10px 0;
+    }
+    #downloadButton {
+      margin: 10px 0;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="drop_zone">Drop a Jupyter notebook here</div>
+  <button id="downloadButton">Download All Images</button>
+  <div id="content"></div>
+
+  <script>
+    var dropZone = document.getElementById('drop_zone');
+    var downloadButton = document.getElementById('downloadButton');
+    var content = document.getElementById('content');
+    var images = [];
+    var notebookName = '';
+
+    function handleFileSelect(evt) {
+      evt.stopPropagation();
+      evt.preventDefault();
+      dropZone.classList.remove('dragging');
+
+      var files = evt.dataTransfer.files; // FileList object.
+      var file = files[0]; // only consider the first file
+      notebookName = file.name.split('.').slice(0, -1).join('.'); // remove extension
+      var reader = new FileReader();
+
+      reader.onload = function(e) {
+        var text = e.target.result;
+        try {
+          var notebook = JSON.parse(text);
+          displayNotebook(notebook);
+        } catch (error) {
+          content.innerText = "Error parsing Jupyter notebook: " + error;
+        }
+      };
+
+      reader.readAsText(file);
+    }
+
+    function displayNotebook(notebook) {
+      content.innerText = '';
+      images = []; // clear any previous images
+      notebook.cells.forEach(cell => {
+        if (cell.outputs) {
+          cell.outputs.forEach(output => {
+            if (output.data && output.data['image/png']) {
+              var img = document.createElement('img');
+              img.classList.add('image');
+              img.src = 'data:image/png;base64,' + output.data['image/png'];
+              content.appendChild(img);
+
+              images.push(output.data['image/png']);
+            }
+          });
+        }
+      });
+
+      if (images.length > 0) {
+        downloadButton.style.display = 'block';
+      } else {
+        downloadButton.style.display = 'none';
+      }
+    }
+
+    function handleDownloadImages() {
+      images.forEach((imageData, index) => {
+        var link = document.createElement('a');
+        link.href = 'data:image/png;base64,' + imageData;
+        link.download = notebookName + '-img' + (index+1) + '.png';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
+    }
+
+    function handleDragOver(evt) {
+      evt.stopPropagation();
+      evt.preventDefault();
+      evt.dataTransfer.dropEffect = 'copy'; // show as copy
+    }
+
+    function handleDragEnter(evt) {
+      evt.stopPropagation();
+      evt.preventDefault();
+      dropZone.classList.add('dragging');
+    }
+
+    function handleDragLeave(evt) {
+      evt.stopPropagation();
+      evt.preventDefault();
+      dropZone.classList.remove('dragging');
+    }
+
+    // Setup the drag and drop listeners.
+    dropZone.addEventListener('dragover', handleDragOver, false);
+    dropZone.addEventListener('drop', handleFileSelect, false);
+    dropZone.addEventListener('dragenter', handleDragEnter, false);
+    dropZone.addEventListener('dragleave', handleDragLeave, false);
+    downloadButton.addEventListener('click', handleDownloadImages, false);
+  </script>
+</body>
+</html>
